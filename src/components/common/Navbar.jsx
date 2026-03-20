@@ -20,7 +20,7 @@ export function Navbar() {
       <div className="navbar__inner">
         <Link to="/" className="navbar__brand">
           <span className="navbar__logo">◈</span>
-          <span className="navbar__name">NeuralClass</span>
+          <span className="navbar__name">Class Host</span>
         </Link>
 
         <nav className="navbar__nav">

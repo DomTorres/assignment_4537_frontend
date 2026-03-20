@@ -112,7 +112,7 @@ export function LoginPage() {
           <div className="auth-form">
             <div className="auth-form__header">
               <h1 className="auth-form__title">Welcome back</h1>
-              <p className="auth-form__sub">Sign in to your NeuralClass account</p>
+              <p className="auth-form__sub">Sign in to your Class Host account</p>
             </div>
 
             <Alert message={serverError} type="error" onDismiss={() => setServerError('')} />
@@ -227,7 +227,7 @@ export function RegisterPage() {
           <div className="auth-form">
             <div className="auth-form__header">
               <h1 className="auth-form__title">Create account</h1>
-              <p className="auth-form__sub">Join NeuralClass — it's free to start</p>
+              <p className="auth-form__sub">Join Class Host — it's free to start</p>
             </div>
 
             <Alert message={serverError} type="error" onDismiss={() => setServerError('')} />
@@ -316,16 +316,16 @@ function AuthBranding() {
       <div className="auth-brand">
         <Link to="/" className="auth-brand__logo">
           <span className="landing__logo-mark">◈</span>
-          NeuralClass
+          Class Host
         </Link>
         <blockquote className="auth-brand__quote">
-          "The classroom of the future understands every student."
+          "A smarter way to keep every student engaged."
         </blockquote>
         <ul className="auth-brand__features">
-          <li>✓ Real-time AI answer evaluation</li>
-          <li>✓ Instant participation analytics</li>
-          <li>✓ 20 free API calls to get started</li>
-          <li>✓ Secure JWT-based authentication</li>
+          <li>✓ Ask questions and collect answers in real time</li>
+          <li>✓ See how your whole class is doing at a glance</li>
+          <li>✓ Students get helpful feedback right away</li>
+          <li>✓ Free to use — no setup required for students</li>
         </ul>
       </div>
       <div className="auth-brand__bg" />

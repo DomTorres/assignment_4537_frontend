@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 /**
- * LandingPage — the public-facing home page of NeuralClass.
+ * LandingPage — the public-facing home page of Class Host.
  * Redirects authenticated users to their respective dashboard.
  */
 export default function LandingPage() {
@@ -34,33 +34,33 @@ export default function LandingPage() {
   const features = [
     {
       icon: '⚡',
-      title: 'Real-Time AI Grading',
-      description: 'Student answers are evaluated instantly by our AI model, giving instructors live correctness feedback.',
+      title: 'Instant Answer Feedback',
+      description: 'Students get feedback on their answers right away, so no one has to wait until the next class to know how they did.',
     },
     {
-      icon: '🔐',
-      title: 'Secure by Design',
-      description: 'JWT-based auth, hashed passwords, XSS & SQL injection protection built in from day one.',
+      icon: '🔒',
+      title: 'Safe & Private',
+      description: 'Your account and data are protected. Passwords are never stored as plain text and every session is kept secure.',
     },
     {
       icon: '📊',
-      title: 'Participation Analytics',
-      description: 'Track response rates, score distributions, and engagement trends across every session.',
+      title: 'See Who\'s Participating',
+      description: 'Instructors can see at a glance who has answered, how the class is doing overall, and where students are struggling.',
     },
     {
       icon: '🤖',
-      title: 'AI Study Assistant',
-      description: 'Students can ask the AI follow-up questions to deepen understanding at any time.',
+      title: 'Built-in Study Assistant',
+      description: 'Students can ask follow-up questions anytime and get helpful, plain-English explanations to keep learning going.',
     },
     {
-      icon: '🏗',
-      title: 'Microservice Architecture',
-      description: 'Frontend and API are independently hosted, enabling scalable, resilient deployments.',
+      icon: '💻',
+      title: 'Works on Any Device',
+      description: 'Class Host runs entirely in the browser — no app to download, no setup required for students.',
     },
     {
       icon: '🎯',
-      title: '20 Free API Calls',
-      description: 'Every student gets 20 complimentary AI evaluations to get started immediately.',
+      title: 'Free to Get Started',
+      description: 'Every student gets free AI-assisted feedback included. No credit card, no complicated sign-up process.',
     },
   ];
 
@@ -70,7 +70,7 @@ export default function LandingPage() {
       <header className="landing__header">
         <Link to="/" className="landing__brand">
           <span className="landing__logo-mark">◈</span>
-          NeuralClass
+          Class Host
         </Link>
         <nav className="landing__nav">
           <a href="#features" className="landing__nav-link">Features</a>
@@ -83,24 +83,24 @@ export default function LandingPage() {
       <section className="landing__hero" ref={heroRef}>
         <div className="landing__grid-bg" />
         <div className="landing__hero-content">
-          <div className="landing__eyebrow">AI-Powered Classroom</div>
+          <div className="landing__eyebrow">AI-Assisted Learning</div>
           <h1 className="landing__headline">
-            The future of<br />
-            <span className="landing__headline-accent">classroom interaction</span>
+            A better way to<br />
+            <span className="landing__headline-accent">run your classroom</span>
           </h1>
           <p className="landing__subline">
-            NeuralClass brings real-time AI evaluation to every question you ask. 
-            Instructors get instant insight. Students get instant feedback.
+            Class Host makes it easy for instructors to ask questions, collect 
+            student answers, and get instant feedback — all in one place.
           </p>
           <div className="landing__hero-actions">
             <Link to="/register" className="btn btn--primary btn--lg">
-              Start for Free
+              Get Started Free
             </Link>
             <Link to="/login" className="btn btn--ghost btn--lg">
               Sign In →
             </Link>
           </div>
-          <p className="landing__hero-note">20 free AI calls · No credit card required</p>
+          <p className="landing__hero-note">Free to use · No credit card needed · Takes 2 minutes to set up</p>
         </div>
         <div className="landing__hero-visual">
           <div className="landing__card-mockup">
@@ -108,7 +108,7 @@ export default function LandingPage() {
               <span className="mockup__dot mockup__dot--red" />
               <span className="mockup__dot mockup__dot--yellow" />
               <span className="mockup__dot mockup__dot--green" />
-              <span className="mockup__title">NeuralClass · Live Session</span>
+              <span className="mockup__title">Class Host · Live Session</span>
             </div>
             <div className="mockup__body">
               <div className="mockup__question">
@@ -142,8 +142,8 @@ export default function LandingPage() {
       {/* ── Features ── */}
       <section className="landing__features" id="features">
         <div className="landing__section-header">
-          <h2 className="landing__section-title">Everything you need</h2>
-          <p className="landing__section-sub">Built for the modern, AI-augmented classroom</p>
+          <h2 className="landing__section-title">Everything in one place</h2>
+          <p className="landing__section-sub">Designed to make teaching and learning a little easier every day</p>
         </div>
         <div className="landing__feature-grid">
           {features.map((f) => (
@@ -158,8 +158,8 @@ export default function LandingPage() {
 
       {/* ── CTA ── */}
       <section className="landing__bottom-cta">
-        <h2>Ready to transform your classroom?</h2>
-        <p>Join NeuralClass and run your first AI-powered session in minutes.</p>
+        <h2>Ready to try it with your class?</h2>
+        <p>Set up your account in minutes and run your first session today.</p>
         <div className="landing__hero-actions">
           <Link to="/register" className="btn btn--primary btn--lg">Create Free Account</Link>
           <Link to="/login" className="btn btn--outline btn--lg">Sign In</Link>
@@ -168,8 +168,8 @@ export default function LandingPage() {
 
       {/* ── Footer ── */}
       <footer className="landing__footer">
-        <span className="landing__brand">◈ NeuralClass</span>
-        <span>AI-Powered RESTful API · Term Project</span>
+        <span className="landing__brand">◈ Class Host</span>
+        <span>AI-Assisted Classroom Tool · Term Project</span>
       </footer>
     </div>
   );
