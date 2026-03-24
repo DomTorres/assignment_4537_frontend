@@ -7,7 +7,7 @@ import { AuthToken } from '../models/AuthToken';
  * centralised error handling that all child services inherit.
  */
 export class BaseApiService {
-  constructor(baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api') {
+  constructor(baseURL = 'https://wa-assignment-4537-hkbxbkgedke7feaf.canadacentral-01.azurewebsites.net/api/v1') {
     this.client = axios.create({ baseURL, timeout: 15000 });
     this._attachInterceptors();
   }
