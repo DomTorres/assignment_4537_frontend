@@ -26,7 +26,7 @@ export default function App() {
           <Route
             path="/dashboard/*"
             element={
-              <ProtectedRoute requiredRole="student">
+              <ProtectedRoute requiredRole="user">
                 <StudentDashboard />
               </ProtectedRoute>
             }
