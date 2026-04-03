@@ -19,8 +19,8 @@ export class AuthService extends BaseApiService {
    * @param {string} role - 'student' | 'admin'
    * @returns {Promise<{ user: User, token: AuthToken }>}
    */
-  async register(name, email, password, role = 'student') {
-    const data = await this.post('/auth/register', { name, email, password, role });
+  async register(name, email, password) {
+    const data = await this.post('/auth/register', { name, email, password });
     const token = new AuthToken(data.token);
     const user = User.fromAPI(data.user);
     token.save();
@@ -35,24 +35,12 @@ export class AuthService extends BaseApiService {
    * @returns {Promise<{ user: User, token: AuthToken }>}
    */
   async login(email, password) {
-      // MOCK — remove when backend is ready
-    const isAdmin = email.includes('admin');
-    const user = new User({
-      id: 1, name: isAdmin ? 'Admin User' : 'John Student',
-      email, role: isAdmin ? 'admin' : 'student',
-      apiCallsUsed: 3, apiCallsLimit: 20
-    });
-    const fakeToken = new AuthToken('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwicm9sZSI6InVzZXIiLCJleHAiOjk5OTk5OTk5OTl9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c');
-    fakeToken.save();
+    const data = await this.post('/auth/login', { email, password });
+    const token = new AuthToken(data.token);
+    const user = User.fromAPI(data.user);
+    token.save();
     this._saveUser(user);
-    return { user, token: fakeToken };
-    
-    // const data = await this.post('/auth/login', { email, password });
-    // const token = new AuthToken(data.token);
-    // const user = User.fromAPI(data.user);
-    // token.save();
-    // this._saveUser(user);
-    // return { user, token };
+    return { user, token };
   }
 
   /** Clear session data from storage */

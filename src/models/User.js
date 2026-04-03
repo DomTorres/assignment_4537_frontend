@@ -33,9 +33,9 @@ export class User {
     return this.role === 'admin';
   }
 
-  /** Whether this user is a student */
+  /** Whether this user is a regular user */
   get isStudent() {
-    return this.role === 'student';
+    return this.role === 'user';
   }
 
   /** Serialize to a plain object for storage */
@@ -53,7 +53,15 @@ export class User {
 
   /** Construct a User from a plain API response object */
   static fromAPI(data) {
-    return new User(data);
+    return new User({
+      id: data.id,
+      email: data.email,
+      name: data.name ?? data.email?.split('@')[0],
+      role: data.role,
+      apiCallsUsed: data.api_calls ?? 0,
+      apiCallsLimit: data.api_limit ?? 20,
+      createdAt: data.created_at ?? null,
+    });
   }
 
   /** Construct a User from localStorage JSON */
