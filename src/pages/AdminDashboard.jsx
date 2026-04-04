@@ -141,13 +141,15 @@ function AnswerReviewPanel({ question, answers, onEvaluate }) {
     <div className="answer-review">
       <div className="answer-review__header">
         <p className="answer-review__question">{question.text}</p>
-        <Button
-          variant="accent"
-          loading={evaluating}
-          onClick={handleEvaluate}
-        >
-          ◈ AI Evaluate All
-        </Button>
+        {!question.isClosed && (
+          <Button
+            variant="accent"
+            loading={evaluating}
+            onClick={handleEvaluate}
+          >
+            ◈ AI Evaluate All
+          </Button>
+        )}
       </div>
       {error && <Alert message={error} type="error" />}
       {answers.length === 0 && (
@@ -160,18 +162,12 @@ function AnswerReviewPanel({ question, answers, onEvaluate }) {
               <span className="answer-card__student">{a.studentName}</span>
               <span className="answer-card__time">{a.formattedDate}</span>
               {a.isGraded && (
-                <span className={`answer-card__score answer-card__score--${a.score >= 60 ? 'pass' : 'fail'}`}>
-                  {a.score}/100 — {a.scoreLabel}
+                <span className={`answer-card__score answer-card__score--${a.correct ? 'pass' : 'fail'}`}>
+                  {a.correct ? '✓ Correct' : '✗ Incorrect'}
                 </span>
               )}
             </div>
             <p className="answer-card__text">{a.text}</p>
-            {a.feedback && (
-              <div className="answer-card__feedback">
-                <span className="answer-card__feedback-label">◈ AI Feedback</span>
-                <p>{a.feedback}</p>
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -362,6 +358,20 @@ function ClassroomManager() {
       setError(e.message);
     }
   };
+
+  // Poll for new answers every 5 s while a question is selected
+  useEffect(() => {
+    if (!selectedQuestion) return;
+
+    const id = setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      classroomService.getAnswers(selectedQuestion.id)
+        .then(setQuestionAnswers)
+        .catch(() => {});
+    }, 5000);
+
+    return () => clearInterval(id);
+  }, [selectedQuestion]);
 
   const handleEvaluate = async (questionId) => {
     const updated = await classroomService.evaluateAnswers(questionId);
@@ -579,11 +589,11 @@ export default function AdminDashboard() {
         {activeTab === 'questions' && (
           <div className="admin-questions-layout">
             <Card className="admin-questions-left">
-              <h2 className="panel-title">Post New Question</h2>
-              <QuestionComposer onPost={handlePostQuestion} />
-
-              <h2 className="panel-title" style={{ marginTop: '2rem' }}>All Questions</h2>
+              <h2 className="panel-title">All Questions</h2>
               {qLoading && <Spinner />}
+              {!qLoading && questions.length === 0 && (
+                <div className="dashboard-empty">No questions yet. Post one from the Classrooms tab.</div>
+              )}
               <div className="question-list">
                 {questions.map((q) => (
                   <div

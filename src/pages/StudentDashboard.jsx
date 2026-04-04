@@ -32,6 +32,10 @@ function QuestionItem({ question, onAnswer }) {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
+  const myAnswer = question.myAnswer;
+  const hasAnswered = submitted || Boolean(myAnswer);
+  const isGraded = myAnswer?.correct !== null && myAnswer?.correct !== undefined;
+
   const handleSubmit = async () => {
     if (!answer.trim()) { setError('Please write an answer first.'); return; }
     setSubmitting(true);
@@ -58,10 +62,21 @@ function QuestionItem({ question, onAnswer }) {
       </div>
       <p className="question-item__text">{question.text}</p>
 
-      {submitted ? (
-        <div className="question-item__submitted">
-          ✓ Answer submitted — awaiting AI evaluation
-        </div>
+      {hasAnswered ? (
+        isGraded ? (
+          <div className="question-item__result">
+            <div className="question-item__score" style={{ color: myAnswer.correct ? 'var(--green)' : 'var(--red)' }}>
+              {myAnswer.correct ? '✓ Correct' : '✗ Incorrect'}
+            </div>
+            {myAnswer.feedback && (
+              <p className="question-item__feedback">{myAnswer.feedback}</p>
+            )}
+          </div>
+        ) : (
+          <div className="question-item__submitted">
+            ✓ Answer submitted — awaiting AI evaluation
+          </div>
+        )
       ) : question.isOpen ? (
         <div className="question-item__answer-form">
           <Textarea
@@ -262,12 +277,23 @@ export default function StudentDashboard() {
       .catch((err) => setApiError(err.message));
   }, []);
 
-  // Reload questions whenever selected classroom changes
+  // Reload questions whenever selected classroom changes, then poll every 5 s.
+  // Polls call the service directly to avoid triggering the loading spinner.
   useEffect(() => {
     const classroomId = selectedMembership?.classroomId ?? null;
+
     fetchQuestions(classroomId)
       .then(setQuestions)
       .catch((err) => setApiError(err.message));
+
+    const id = setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      classroomService.getQuestions(classroomId)
+        .then(setQuestions)
+        .catch(() => {});
+    }, 5000);
+
+    return () => clearInterval(id);
   }, [selectedMembership]);
 
   const handleAnswer = async (questionId, answerText) => {
@@ -296,6 +322,7 @@ export default function StudentDashboard() {
   };
 
   const openQuestions = questions.filter((q) => q.isOpen);
+  const visibleQuestions = questions.filter((q) => q.isOpen || q.isClosed);
 
   return (
     <div className="dashboard-layout">
@@ -391,12 +418,12 @@ export default function StudentDashboard() {
             )}
             <div className="question-list">
               {qLoading && <div className="dashboard-loading">Loading questions…</div>}
-              {!qLoading && openQuestions.length === 0 && (
+              {!qLoading && visibleQuestions.length === 0 && (
                 <div className="dashboard-empty">
                   No open questions right now. Check back during class!
                 </div>
               )}
-              {openQuestions.map((q) => (
+              {visibleQuestions.map((q) => (
                 <QuestionItem key={q.id} question={q} onAnswer={handleAnswer} />
               ))}
             </div>

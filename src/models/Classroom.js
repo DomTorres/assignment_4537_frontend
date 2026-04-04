@@ -2,7 +2,7 @@
  * Question model representing a question posed by an instructor.
  */
 export class Question {
-  constructor({ id, text, authorId, authorName, createdAt, status = 'open', aiEvaluation = null }) {
+  constructor({ id, text, authorId, authorName, createdAt, status = 'open', aiEvaluation = null, myAnswer = null }) {
     this.id = id;
     this.text = text;
     this.authorId = authorId;
@@ -10,6 +10,7 @@ export class Question {
     this.createdAt = createdAt ? new Date(createdAt) : new Date();
     this.status = status; // 'open' | 'closed' | 'evaluated'
     this.aiEvaluation = aiEvaluation;
+    this.myAnswer = myAnswer; // { id, text, correct, feedback } | null — populated for students
   }
 
   get isOpen() { return this.status === 'open'; }
@@ -31,26 +32,18 @@ export class Question {
  * StudentAnswer model representing a student's response to a question.
  */
 export class StudentAnswer {
-  constructor({ id, questionId, studentId, studentName, text, submittedAt, score = null, feedback = null }) {
+  constructor({ id, questionId, studentId, studentName, text, submittedAt, correct = null, feedback = null }) {
     this.id = id;
     this.questionId = questionId;
     this.studentId = studentId;
     this.studentName = studentName;
     this.text = text;
     this.submittedAt = submittedAt ? new Date(submittedAt) : new Date();
-    this.score = score;         // 0-100 | null (not yet graded)
+    this.correct = correct;     // true | false | null (not yet graded)
     this.feedback = feedback;   // AI feedback string | null
   }
 
-  get isGraded() { return this.score !== null; }
-
-  get scoreLabel() {
-    if (this.score === null) return 'Pending';
-    if (this.score >= 80) return 'Excellent';
-    if (this.score >= 60) return 'Good';
-    if (this.score >= 40) return 'Needs Work';
-    return 'Incorrect';
-  }
+  get isGraded() { return this.correct !== null; }
 
   get formattedDate() {
     return this.submittedAt.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });

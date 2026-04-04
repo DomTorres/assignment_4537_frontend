@@ -24,7 +24,9 @@ class FormValidator {
 
   static validatePassword(password) {
     if (!password) return 'Password is required.';
-    if (password.length < 3) return 'Password must be at least 3 characters.';
+    if (password.length < 8) return 'Password must be at least 8 characters.';
+    if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter.';
+    if (!/[0-9]/.test(password)) return 'Password must contain at least one number.';
     return null;
   }
 
@@ -61,6 +63,31 @@ class FormValidator {
   static hasErrors(errorsObj) {
     return Object.keys(errorsObj).length > 0;
   }
+}
+
+// ─── PasswordRules ───────────────────────────────────────────────────────────
+
+const PASSWORD_RULES = [
+  { id: 'length',  label: 'At least 8 characters',          test: (p) => p.length >= 8 },
+  { id: 'upper',   label: 'At least one uppercase letter',   test: (p) => /[A-Z]/.test(p) },
+  { id: 'number',  label: 'At least one number',             test: (p) => /[0-9]/.test(p) },
+];
+
+function PasswordRules({ password }) {
+  if (!password) return null;
+  return (
+    <ul style={{ listStyle: 'none', margin: '0.35rem 0 0.75rem', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+      {PASSWORD_RULES.map(({ id, label, test }) => {
+        const passed = test(password);
+        return (
+          <li key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: passed ? 'var(--green)' : 'var(--text-2)', transition: 'color var(--transition)' }}>
+            <span style={{ fontWeight: 700, width: '1rem', textAlign: 'center' }}>{passed ? '✓' : '✗'}</span>
+            {label}
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 // ─── LoginPage ───────────────────────────────────────────────────────────────
@@ -250,9 +277,10 @@ export function RegisterPage() {
                 value={fields.password}
                 onChange={handleChange}
                 error={fieldErrors.password}
-                placeholder="At least 3 characters"
+                placeholder="At least 8 characters"
                 autoComplete="new-password"
               />
+              <PasswordRules password={fields.password} />
               <Input
                 label="Confirm password"
                 id="confirmPassword"

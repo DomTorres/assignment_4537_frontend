@@ -68,7 +68,7 @@ export class ClassroomService extends BaseApiService {
 
   /** Fetch API usage summary for the current user */
   async getUsageSummary() {
-    const data = await this.get('/usage');
+    const data = await this.get('/user/usage');
     return ApiUsageSummary.fromAPI(data);
   }
 

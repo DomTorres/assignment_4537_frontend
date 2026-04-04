@@ -672,6 +672,9 @@ img { max-width: 100%; display: block; }
 .question-item__submit { align-self: flex-start; }
 .question-item__submitted { font-size: 0.875rem; color: var(--green); padding: 0.65rem 1rem; background: var(--green-dim); border-radius: var(--radius); }
 .question-item__closed { font-size: 0.875rem; color: var(--text-3); }
+.question-item__result { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem 1rem; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); }
+.question-item__score { font-size: 0.925rem; font-weight: 600; }
+.question-item__feedback { font-size: 0.875rem; color: var(--text-2); line-height: 1.5; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    AI CHAT
