@@ -52,7 +52,13 @@ export class AuthToken {
     const raw = localStorage.getItem(AuthToken.STORAGE_KEY);
     if (!raw) return null;
     const token = new AuthToken(raw);
-    return token.isValid && !token.isExpired ? token : null;
+    if (!token.isValid || token.isExpired) {
+      // Clean up stale/invalid token so it doesn't block navigation
+      AuthToken.clear();
+      localStorage.removeItem('current_user');
+      return null;
+    }
+    return token;
   }
 
   toString() {

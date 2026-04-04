@@ -792,3 +792,194 @@ img { max-width: 100%; display: block; }
 .overview-question-row:last-child { border-bottom: none; }
 .overview-question-row:hover { color: var(--accent); }
 .overview-question-row__text { font-size: 0.9rem; flex: 1; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CLASSROOM / GROUP PANELS
+══════════════════════════════════════════════════════════════════════════ */
+
+/* Classroom card grid */
+.classroom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.classroom-card {
+  position: relative;
+  cursor: pointer;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+.classroom-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(79,127,255,0.12);
+}
+.classroom-card--active {
+  border-color: var(--accent);
+  background: var(--blue-dim);
+}
+
+.classroom-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.classroom-card__name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.classroom-card__desc {
+  font-size: 0.82rem;
+  color: var(--text-2);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+.classroom-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.classroom-card__meta {
+  font-size: 0.78rem;
+  color: var(--text-3);
+}
+.classroom-card__code {
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border: 1px solid rgba(79,127,255,0.3);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.classroom-card__code:hover { background: rgba(79,127,255,0.35); }
+.classroom-card__code-hint {
+  font-size: 0.68rem;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+/* Create classroom form */
+.classroom-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+}
+.classroom-create-form__title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+.classroom-create-form__row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+/* Join classroom form (student) */
+.join-classroom-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  padding: 1.25rem;
+  background: var(--bg-2);
+  border: 1px dashed var(--border-2);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+}
+.join-classroom-form .field { margin-bottom: 0; flex: 1; }
+
+/* Membership list (student) */
+.membership-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.membership-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+.membership-item:hover { border-color: var(--accent); }
+.membership-item--active {
+  border-color: var(--accent);
+  background: var(--blue-dim);
+}
+.membership-item__name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.membership-item__teacher {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+.membership-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Classroom selector strip (above question list in student dashboard) */
+.classroom-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.classroom-selector__chip {
+  padding: 0.35rem 0.9rem;
+  border-radius: 99px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: var(--font-body);
+}
+.classroom-selector__chip:hover { border-color: var(--accent); color: var(--text); }
+.classroom-selector__chip--active {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Copied tooltip */
+.copied-tip {
+  font-size: 0.72rem;
+  color: var(--green);
+  animation: fadeUp 0.3s ease both;
+}

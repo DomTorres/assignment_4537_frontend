@@ -22,9 +22,8 @@ export function ProtectedRoute({ children, requiredRole = null }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && user.role !== requiredRole) {
-    // Redirect to appropriate dashboard if wrong role
-    return <Navigate to={user.isAdmin ? '/admin' : '/dashboard'} replace />;
+  if (requiredRole && user?.role !== requiredRole) {
+    return <Navigate to={user?.isAdmin ? '/admin' : '/dashboard'} replace />;
   }
 
   return children;

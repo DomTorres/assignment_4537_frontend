@@ -156,18 +156,6 @@ export function LoginPage() {
               Don't have an account?{' '}
               <Link to="/register" className="auth-form__link">Create one</Link>
             </p>
-
-            <div className="auth-form__test-creds">
-              <p className="auth-form__test-label">Test credentials</p>
-              <div className="auth-form__cred-row">
-                <span>Student:</span>
-                <code>john@john.com / 123</code>
-              </div>
-              <div className="auth-form__cred-row">
-                <span>Admin:</span>
-                <code>admin@admin.com / 111</code>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -186,7 +174,6 @@ export function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'student',
   });
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState('');
@@ -210,7 +197,7 @@ export function RegisterPage() {
 
     setLoading(true);
     try {
-      const user = await register(fields.name, fields.email, fields.password, fields.role);
+      const user = await register(fields.name, fields.email, fields.password);
       navigate(user.isAdmin ? '/admin' : '/dashboard', { replace: true });
     } catch (err) {
       setServerError(err.message || 'Registration failed. Please try again.');
@@ -277,20 +264,6 @@ export function RegisterPage() {
                 placeholder="Repeat your password"
                 autoComplete="new-password"
               />
-
-              <div className="field">
-                <label className="field__label" htmlFor="role">Account type</label>
-                <select
-                  id="role"
-                  name="role"
-                  value={fields.role}
-                  onChange={handleChange}
-                  className="field__input field__input--select"
-                >
-                  <option value="student">Student</option>
-                  <option value="admin">Instructor / Admin</option>
-                </select>
-              </div>
 
               <Button type="submit" variant="primary" loading={loading} className="auth-form__submit">
                 Create Account

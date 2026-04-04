@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar } from '../components/common/Navbar';
-import { Card, UsageMeter, Alert, Button, Textarea, Badge } from '../components/common/UI';
+import { Card, UsageMeter, Alert, Button, Input, Textarea, Badge } from '../components/common/UI';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { classroomService } from '../services/ClassroomService';
-import { Question, StudentAnswer } from '../models/Classroom';
+import { Question, StudentAnswer, ClassroomMembership } from '../models/Classroom';
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -152,6 +152,87 @@ function AiChatPanel({ onCallUsed }) {
   );
 }
 
+// ─── JoinClassroomPanel ──────────────────────────────────────────────────────
+
+/**
+ * JoinClassroomPanel — lets students join a classroom with a code
+ * and lists all classrooms they belong to.
+ */
+function JoinClassroomPanel({ memberships, onJoin, onLeave, onSelect, selectedId }) {
+  const [joinCode, setJoinCode] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleJoin = async () => {
+    const code = joinCode.trim().toUpperCase();
+    if (!code) { setError('Enter a join code.'); return; }
+    setJoining(true);
+    setError('');
+    try {
+      await onJoin(code);
+      setJoinCode('');
+      setSuccess('Joined! You can now see questions for this class.');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.message || 'Invalid join code.');
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="join-classroom-form">
+        <Input
+          label="Join code"
+          id="join-code"
+          placeholder="e.g. ABC123"
+          value={joinCode}
+          onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setError(''); }}
+          style={{ textTransform: 'uppercase', letterSpacing: '0.1em' }}
+        />
+        <Button variant="primary" loading={joining} onClick={handleJoin}>
+          Join Class
+        </Button>
+      </div>
+      {error && <Alert message={error} type="error" onDismiss={() => setError('')} />}
+      {success && <Alert message={success} type="success" />}
+
+      {memberships.length === 0 ? (
+        <div className="dashboard-empty">
+          You haven't joined any classes yet. Ask your instructor for a join code.
+        </div>
+      ) : (
+        <div className="membership-list">
+          {memberships.map((m) => (
+            <div
+              key={m.classroomId}
+              className={`membership-item ${selectedId === m.classroomId ? 'membership-item--active' : ''}`}
+              onClick={() => onSelect(m)}
+            >
+              <div>
+                <div className="membership-item__name">{m.classroomName}</div>
+                <div className="membership-item__teacher">Instructor: {m.teacherName}</div>
+              </div>
+              <div className="membership-item__actions">
+                <Badge variant="student">{m.joinCode}</Badge>
+                <Button
+                  variant="ghost"
+                  onClick={(e) => { e.stopPropagation(); onLeave(m.classroomId); }}
+                  style={{ fontSize: '0.78rem', padding: '0.3rem 0.75rem', color: 'var(--red)', borderColor: 'var(--red-dim)' }}
+                >
+                  Leave
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── StudentDashboard ────────────────────────────────────────────────────────
 
 /**
@@ -161,18 +242,33 @@ function AiChatPanel({ onCallUsed }) {
 export default function StudentDashboard() {
   const { user, refreshUser } = useAuth();
   const [questions, setQuestions] = useState([]);
-  const [activeTab, setActiveTab] = useState('questions'); // 'questions' | 'ai'
+  const [memberships, setMemberships] = useState([]);
+  const [selectedMembership, setSelectedMembership] = useState(null);
+  const [activeTab, setActiveTab] = useState('classes');
   const [apiError, setApiError] = useState('');
 
   const { execute: fetchQuestions, loading: qLoading } = useApi(
-    useCallback(() => classroomService.getQuestions(), [])
+    useCallback((classroomId) => classroomService.getQuestions(classroomId), [])
   );
 
+  const { execute: fetchMemberships } = useApi(
+    useCallback(() => classroomService.getMyMemberships(), [])
+  );
+
+  // Load memberships on mount — catches network errors gracefully
   useEffect(() => {
-    fetchQuestions()
-      .then((qs) => setQuestions(qs))
+    fetchMemberships()
+      .then(setMemberships)
       .catch((err) => setApiError(err.message));
   }, []);
+
+  // Reload questions whenever selected classroom changes
+  useEffect(() => {
+    const classroomId = selectedMembership?.classroomId ?? null;
+    fetchQuestions(classroomId)
+      .then(setQuestions)
+      .catch((err) => setApiError(err.message));
+  }, [selectedMembership]);
 
   const handleAnswer = async (questionId, answerText) => {
     await classroomService.submitAnswer(questionId, answerText);
@@ -181,6 +277,22 @@ export default function StudentDashboard() {
     if (user) {
       refreshUser({ ...user, apiCallsUsed: summary.used });
     }
+  };
+
+   const handleJoinClassroom = async (joinCode) => {
+    const membership = await classroomService.joinClassroom(joinCode);
+    setMemberships((prev) => [...prev, membership]);
+  };
+
+  const handleLeaveClassroom = async (classroomId) => {
+    await classroomService.leaveClassroom(classroomId);
+    setMemberships((prev) => prev.filter((m) => m.classroomId !== classroomId));
+    if (selectedMembership?.classroomId === classroomId) setSelectedMembership(null);
+  };
+
+  const handleSelectMembership = (membership) => {
+    setSelectedMembership(membership);
+    setActiveTab('questions');
   };
 
   const openQuestions = questions.filter((q) => q.isOpen);
@@ -218,8 +330,14 @@ export default function StudentDashboard() {
 
         {apiError && <Alert message={apiError} type="error" onDismiss={() => setApiError('')} />}
 
-        {/* Tab bar */}
+{/* Tab bar */}
         <div className="tab-bar">
+          <button
+            className={`tab-bar__tab ${activeTab === 'classes' ? 'tab-bar__tab--active' : ''}`}
+            onClick={() => setActiveTab('classes')}
+          >
+            🏫 My Classes <span className="tab-bar__badge">{memberships.length}</span>
+          </button>
           <button
             className={`tab-bar__tab ${activeTab === 'questions' ? 'tab-bar__tab--active' : ''}`}
             onClick={() => setActiveTab('questions')}
@@ -234,19 +352,55 @@ export default function StudentDashboard() {
           </button>
         </div>
 
-        {/* Tab content */}
+        {/* Classes tab */}
+        {activeTab === 'classes' && (
+          <Card>
+            <h2 className="panel-title">🏫 My Classes</h2>
+            <p className="panel-sub">Join a class with the code your instructor gave you.</p>
+            <JoinClassroomPanel
+              memberships={memberships}
+              onJoin={handleJoinClassroom}
+              onLeave={handleLeaveClassroom}
+              onSelect={handleSelectMembership}
+              selectedId={selectedMembership?.classroomId}
+            />
+          </Card>
+        )}
+
+        {/* Questions tab */}
         {activeTab === 'questions' && (
-          <div className="question-list">
-            {qLoading && <div className="dashboard-loading">Loading questions…</div>}
-            {!qLoading && openQuestions.length === 0 && (
-              <div className="dashboard-empty">
-                No open questions right now. Check back during class!
+          <>
+            {memberships.length > 0 && (
+              <div className="classroom-selector">
+                <button
+                  className={`classroom-selector__chip ${!selectedMembership ? 'classroom-selector__chip--active' : ''}`}
+                  onClick={() => setSelectedMembership(null)}
+                >
+                  All Classes
+                </button>
+                {memberships.map((m) => (
+                  <button
+                    key={m.classroomId}
+                    className={`classroom-selector__chip ${selectedMembership?.classroomId === m.classroomId ? 'classroom-selector__chip--active' : ''}`}
+                    onClick={() => setSelectedMembership(m)}
+                  >
+                    {m.classroomName}
+                  </button>
+                ))}
               </div>
             )}
-            {openQuestions.map((q) => (
-              <QuestionItem key={q.id} question={q} onAnswer={handleAnswer} />
-            ))}
-          </div>
+            <div className="question-list">
+              {qLoading && <div className="dashboard-loading">Loading questions…</div>}
+              {!qLoading && openQuestions.length === 0 && (
+                <div className="dashboard-empty">
+                  No open questions right now. Check back during class!
+                </div>
+              )}
+              {openQuestions.map((q) => (
+                <QuestionItem key={q.id} question={q} onAnswer={handleAnswer} />
+              ))}
+            </div>
+          </>
         )}
 
         {activeTab === 'ai' && (

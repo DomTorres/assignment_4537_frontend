@@ -7,15 +7,15 @@ import { useAuth } from '../hooks/useAuth';
  * Redirects authenticated users to their respective dashboard.
  */
 export default function LandingPage() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
   const heroRef = useRef(null);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (!loading && isAuthenticated && user) {
       navigate(user.isAdmin ? '/admin' : '/dashboard', { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [loading, isAuthenticated, user, navigate]);
 
   // Parallax-lite: shift grid on mouse move
   useEffect(() => {

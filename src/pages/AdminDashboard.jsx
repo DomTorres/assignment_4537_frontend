@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar } from '../components/common/Navbar';
-import { Card, UsageMeter, Alert, Button, Textarea, Badge, Spinner } from '../components/common/UI';
+import { Card, UsageMeter, Alert, Button, Input, Textarea, Badge, Spinner } from '../components/common/UI';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { classroomService } from '../services/ClassroomService';
 import { adminService } from '../services/AdminService';
+import { Classroom } from '../models/Classroom';
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -178,6 +179,268 @@ function AnswerReviewPanel({ question, answers, onEvaluate }) {
   );
 }
 
+// ─── ClassroomManager ────────────────────────────────────────────────────────
+
+/**
+ * CreateClassroomForm — inline form for creating a new classroom.
+ */
+function CreateClassroomForm({ onCreate }) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleCreate = async () => {
+    if (!name.trim()) { setError('Classroom name is required.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      await onCreate(name.trim(), description.trim());
+      setName('');
+      setDescription('');
+    } catch (err) {
+      setError(err.message || 'Failed to create classroom.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="classroom-create-form">
+      <p className="classroom-create-form__title">➕ Create New Classroom</p>
+      <div className="classroom-create-form__row">
+        <Input
+          label="Classroom name"
+          id="classroom-name"
+          placeholder="e.g. COMP 4537 — Fall 2025"
+          value={name}
+          onChange={(e) => { setName(e.target.value); setError(''); }}
+        />
+        <Input
+          label="Description (optional)"
+          id="classroom-desc"
+          placeholder="Short description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+        <Button variant="primary" loading={loading} onClick={handleCreate}>
+          Create
+        </Button>
+      </div>
+      {error && <span className="field__error">{error}</span>}
+    </div>
+  );
+}
+
+/**
+ * ClassroomCard — displays a single classroom with its join code and actions.
+ */
+function ClassroomCard({ classroom, isSelected, onSelect, onDelete }) {
+  const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleCopyCode = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(classroom.joinCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Delete "${classroom.name}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    try { await onDelete(classroom.id); }
+    finally { setDeleting(false); }
+  };
+
+  return (
+    <Card
+      className={`classroom-card ${isSelected ? 'classroom-card--active' : ''}`}
+      onClick={() => onSelect(classroom)}
+    >
+      <div className="classroom-card__header">
+        <span className="classroom-card__name">{classroom.name}</span>
+        <Badge variant={isSelected ? 'open' : 'default'}>
+          {classroom.memberCount} student{classroom.memberCount !== 1 ? 's' : ''}
+        </Badge>
+      </div>
+      {classroom.description && (
+        <p className="classroom-card__desc">{classroom.description}</p>
+      )}
+      <div className="classroom-card__footer">
+        <div>
+          <div
+            className="classroom-card__code"
+            onClick={handleCopyCode}
+            title="Click to copy join code"
+          >
+            {classroom.joinCode}
+          </div>
+          {copied
+            ? <span className="copied-tip">✓ Copied!</span>
+            : <span className="classroom-card__code-hint">click to copy join code</span>
+          }
+        </div>
+        <Button
+          variant="ghost"
+          loading={deleting}
+          onClick={handleDelete}
+          style={{ fontSize: '0.78rem', padding: '0.3rem 0.75rem', color: 'var(--red)', borderColor: 'var(--red-dim)' }}
+        >
+          Delete
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * ClassroomManager — full classroom management tab for admins.
+ * Teachers create classrooms, post questions to specific ones,
+ * and review answers per classroom.
+ */
+function ClassroomManager() {
+  const [classrooms, setClassrooms] = useState([]);
+  const [selectedClassroom, setSelectedClassroom] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [questionAnswers, setQuestionAnswers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    classroomService.getMyClassrooms()
+      .then(setClassrooms)
+      .catch((e) => {
+        // Network error expected when backend isn't connected yet — show message, don't crash
+        setError('Could not load classrooms. ' + (e.message || 'Check your connection.'));
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSelectClassroom = async (classroom) => {
+    setSelectedClassroom(classroom);
+    setSelectedQuestion(null);
+    setQuestions([]);
+    setQuestionAnswers([]);
+    try {
+      const qs = await classroomService.getClassroomQuestions(classroom.id);
+      setQuestions(qs);
+    } catch (e) {
+      setError('Could not load questions: ' + (e.message || 'Network error'));
+    }
+  };
+
+  const handleCreateClassroom = async (name, description) => {
+    const classroom = await classroomService.createClassroom(name, description);
+    setClassrooms((prev) => [classroom, ...prev]);
+  };
+
+  const handleDeleteClassroom = async (classroomId) => {
+    await classroomService.deleteClassroom(classroomId);
+    setClassrooms((prev) => prev.filter((c) => c.id !== classroomId));
+    if (selectedClassroom?.id === classroomId) {
+      setSelectedClassroom(null);
+      setQuestions([]);
+    }
+  };
+
+  const handlePostQuestion = async (text) => {
+    if (!selectedClassroom) return;
+    const q = await classroomService.submitClassroomQuestion(selectedClassroom.id, text);
+    setQuestions((prev) => [q, ...prev]);
+  };
+
+  const handleSelectQuestion = async (question) => {
+    setSelectedQuestion(question);
+    try {
+      const answers = await classroomService.getAnswers(question.id);
+      setQuestionAnswers(answers);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const handleEvaluate = async (questionId) => {
+    const updated = await classroomService.evaluateAnswers(questionId);
+    setQuestions((prev) => prev.map((q) => (q.id === updated.id ? updated : q)));
+    const answers = await classroomService.getAnswers(questionId);
+    setQuestionAnswers(answers);
+  };
+
+  return (
+    <div>
+      {error && <Alert message={error} type="error" onDismiss={() => setError('')} />}
+
+      <CreateClassroomForm onCreate={handleCreateClassroom} />
+
+      {loading && <Spinner />}
+
+      {!loading && classrooms.length === 0 && (
+        <div className="dashboard-empty">No classrooms yet. Create one above.</div>
+      )}
+
+      <div className="classroom-grid">
+        {classrooms.map((c) => (
+          <ClassroomCard
+            key={c.id}
+            classroom={c}
+            isSelected={selectedClassroom?.id === c.id}
+            onSelect={handleSelectClassroom}
+            onDelete={handleDeleteClassroom}
+          />
+        ))}
+      </div>
+
+      {selectedClassroom && (
+        <div className="admin-questions-layout" style={{ marginTop: '1.5rem' }}>
+          <Card className="admin-questions-left">
+            <h2 className="panel-title">
+              Questions — {selectedClassroom.name}
+            </h2>
+            <QuestionComposer onPost={handlePostQuestion} />
+
+            <div className="question-list" style={{ marginTop: '1rem' }}>
+              {questions.length === 0 && (
+                <div className="dashboard-empty">No questions in this classroom yet.</div>
+              )}
+              {questions.map((q) => (
+                <div
+                  key={q.id}
+                  className={`question-list-item ${selectedQuestion?.id === q.id ? 'question-list-item--active' : ''}`}
+                  onClick={() => handleSelectQuestion(q)}
+                >
+                  <p className="question-list-item__text">{q.text}</p>
+                  <div className="question-list-item__meta">
+                    <Badge variant={q.isOpen ? 'open' : 'closed'}>{q.status}</Badge>
+                    <span>{q.formattedDate}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            {selectedQuestion ? (
+              <AnswerReviewPanel
+                question={selectedQuestion}
+                answers={questionAnswers}
+                onEvaluate={handleEvaluate}
+              />
+            ) : (
+              <div className="dashboard-empty">
+                Select a question on the left to review its answers.
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── AdminDashboard ──────────────────────────────────────────────────────────
 
 /**
@@ -263,13 +526,14 @@ export default function AdminDashboard() {
 
         {/* Tab bar */}
         <div className="tab-bar">
-          {['overview', 'questions', 'users'].map((tab) => (
+          {['overview', 'classrooms', 'questions', 'users'].map((tab) => (
             <button
               key={tab}
               className={`tab-bar__tab ${activeTab === tab ? 'tab-bar__tab--active' : ''}`}
               onClick={() => setActiveTab(tab)}
             >
               {tab === 'overview' && '📊 Overview'}
+              {tab === 'classrooms' && '🏫 Classrooms'}
               {tab === 'questions' && '❓ Questions'}
               {tab === 'users' && '👥 Users & Usage'}
             </button>
@@ -304,6 +568,11 @@ export default function AdminDashboard() {
               )}
             </Card>
           </div>
+        )}
+
+        {/* Classrooms tab */}
+        {activeTab === 'classrooms' && (
+          <ClassroomManager />
         )}
 
         {/* Questions tab */}

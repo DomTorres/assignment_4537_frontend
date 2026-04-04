@@ -60,3 +60,54 @@ export class StudentAnswer {
     return new StudentAnswer(data);
   }
 }
+
+/**
+ * Classroom (Group) model — represents a class a teacher owns
+ * and students can join via a join code.
+ */
+export class Classroom {
+  constructor({ id, name, description = '', teacherId, teacherName, joinCode, memberCount = 0, createdAt }) {
+    this.id = id;
+    this.name = name;
+    this.description = description;
+    this.teacherId = teacherId;
+    this.teacherName = teacherName;
+    this.joinCode = joinCode;       // short alphanumeric code students use to join
+    this.memberCount = memberCount;
+    this.createdAt = createdAt ? new Date(createdAt) : new Date();
+  }
+
+  get formattedDate() {
+    return this.createdAt.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  /** Returns a shareable label combining name + code */
+  get displayLabel() {
+    return `${this.name} (${this.joinCode})`;
+  }
+
+  static fromAPI(data) {
+    return new Classroom(data);
+  }
+}
+
+/**
+ * ClassroomMembership — tracks which classrooms a student belongs to.
+ */
+export class ClassroomMembership {
+  constructor({ classroomId, classroomName, joinCode, teacherName, joinedAt }) {
+    this.classroomId = classroomId;
+    this.classroomName = classroomName;
+    this.joinCode = joinCode;
+    this.teacherName = teacherName;
+    this.joinedAt = joinedAt ? new Date(joinedAt) : new Date();
+  }
+
+  get formattedDate() {
+    return this.joinedAt.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  static fromAPI(data) {
+    return new ClassroomMembership(data);
+  }
+}
