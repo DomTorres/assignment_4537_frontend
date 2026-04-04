@@ -40,9 +40,8 @@ class FormValidator {
   static validateLogin({ email, password }) {
     const errors = {};
     const emailErr = this.validateEmail(email);
-    const passwordErr = this.validatePassword(password);
     if (emailErr) errors.email = emailErr;
-    if (passwordErr) errors.password = passwordErr;
+    if (!password) errors.password = 'Password is required.';
     return errors;
   }
 
