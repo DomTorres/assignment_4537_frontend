@@ -751,9 +751,29 @@ img { max-width: 100%; display: block; }
 .answer-card__score--pass { color: var(--green); }
 .answer-card__score--fail { color: var(--red); }
 .answer-card__text { font-size: 0.9rem; color: var(--text); }
-.answer-card__feedback { margin-top: 0.75rem; padding: 0.75rem; background: var(--purple-dim); border-radius: var(--radius); border: 1px solid rgba(176,108,255,0.2); }
+.answer-card__feedback { margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-2); font-style: italic; }
 .answer-card__feedback-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-2); display: block; margin-bottom: 4px; }
 .answer-card__feedback p { font-size: 0.875rem; color: var(--text-2); }
+
+/* Evaluation summary panel */
+.eval-summary { margin: 1rem 0; padding: 1rem; background: var(--surface-2); border-radius: var(--radius); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.75rem; }
+.eval-summary__title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin: 0; }
+.eval-summary__scores { display: flex; gap: 1.5rem; }
+.eval-summary__score { display: flex; flex-direction: column; align-items: center; min-width: 4rem; }
+.eval-summary__count { font-size: 1.75rem; font-weight: 800; font-family: var(--font-display); line-height: 1; }
+.eval-summary__label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-top: 0.2rem; }
+.eval-summary__score--pass .eval-summary__count { color: var(--green); }
+.eval-summary__score--fail .eval-summary__count { color: var(--red); }
+.eval-summary__score--neutral .eval-summary__count { color: var(--accent); }
+.eval-summary__score--warn .eval-summary__count { color: var(--amber, #f59e0b); }
+.eval-summary__text { font-size: 0.9rem; color: var(--text-2); line-height: 1.6; border-top: 1px solid var(--border); padding-top: 0.75rem; margin: 0; }
+.eval-summary__section { border-top: 1px solid var(--border); padding-top: 0.75rem; }
+.eval-summary__section-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin: 0 0 0.5rem; }
+.eval-summary__section-title--warn { color: var(--red); }
+.eval-summary__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.eval-summary__list-item { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 0.875rem; }
+.eval-summary__list-label { color: var(--text); }
+.eval-summary__list-meta { color: var(--text-3); font-size: 0.78rem; white-space: nowrap; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    USERS TABLE (admin)

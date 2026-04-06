@@ -50,6 +50,20 @@ export class ClassroomService extends BaseApiService {
     return Question.fromAPI(data.question);
   }
 
+  /**
+   * Run aggregate AI analysis on a question and its answers.
+   * @param {string} questionText
+   * @param {StudentAnswer[]} answers
+   * @returns {Promise<object>} - analysis object from /analyze
+   */
+  async analyzeAnswers(questionText, answers) {
+    const data = await this.post('/analyze', {
+      question: questionText,
+      responses: answers.map((a) => ({ studentId: String(a.studentId ?? a.id), answer: a.text })),
+    });
+    return data.analysis;
+  }
+
   /** Fetch answers for a specific question */
   async getAnswers(questionId) {
     const data = await this.get(`/questions/${questionId}/answers`);
