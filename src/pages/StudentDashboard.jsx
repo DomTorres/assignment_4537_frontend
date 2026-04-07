@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/common/Navbar';
 import { Card, UsageMeter, Alert, Button, Input, Textarea, Badge } from '../components/common/UI';
 import { useAuth } from '../hooks/useAuth';
@@ -258,13 +259,26 @@ function JoinClassroomPanel({ memberships, onJoin, onLeave, onSelect, selectedId
  * StudentDashboard — the main view for authenticated student users.
  * Shows usage stats, open questions, personal answers, and AI chat.
  */
+function tabFromPath(pathname) {
+  const segment = pathname.split('/dashboard/')[1]?.split('/')[0];
+  return ['classes', 'questions', 'ai'].includes(segment) ? segment : 'classes';
+}
+
 export default function StudentDashboard() {
   const { user, refreshUser } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [questions, setQuestions] = useState([]);
   const [memberships, setMemberships] = useState([]);
   const [selectedMembership, setSelectedMembership] = useState(null);
-  const [activeTab, setActiveTab] = useState('classes');
+  const [activeTab, setActiveTab] = useState(() => tabFromPath(location.pathname));
   const [apiError, setApiError] = useState('');
+
+  // Sync tab when the URL changes (e.g. navbar link clicked)
+  useEffect(() => {
+    setActiveTab(tabFromPath(location.pathname));
+  }, [location.pathname]);
+
 
   const { execute: fetchQuestions, loading: qLoading } = useApi(
     useCallback((classroomId) => classroomService.getQuestions(classroomId), [])
@@ -302,11 +316,8 @@ export default function StudentDashboard() {
 
   const handleAnswer = async (questionId, answerText) => {
     await classroomService.submitAnswer(questionId, answerText);
-    // Refresh usage after a call is consumed
     const summary = await classroomService.getUsageSummary();
-    if (user) {
-      refreshUser({ ...user, apiCallsUsed: summary.used });
-    }
+    refreshUser({ apiCallsUsed: summary.used, apiCallsLimit: summary.limit });
   };
 
    const handleJoinClassroom = async (joinCode) => {
@@ -322,7 +333,7 @@ export default function StudentDashboard() {
 
   const handleSelectMembership = (membership) => {
     setSelectedMembership(membership);
-    setActiveTab('questions');
+    navigate('/dashboard/questions');
   };
 
   const openQuestions = questions.filter((q) => q.isOpen);
@@ -365,19 +376,19 @@ export default function StudentDashboard() {
         <div className="tab-bar">
           <button
             className={`tab-bar__tab ${activeTab === 'classes' ? 'tab-bar__tab--active' : ''}`}
-            onClick={() => setActiveTab('classes')}
+            onClick={() => navigate('/dashboard/classes')}
           >
             🏫 My Classes <span className="tab-bar__badge">{memberships.length}</span>
           </button>
           <button
             className={`tab-bar__tab ${activeTab === 'questions' ? 'tab-bar__tab--active' : ''}`}
-            onClick={() => setActiveTab('questions')}
+            onClick={() => navigate('/dashboard/questions')}
           >
             Live Questions <span className="tab-bar__badge">{openQuestions.length}</span>
           </button>
           <button
             className={`tab-bar__tab ${activeTab === 'ai' ? 'tab-bar__tab--active' : ''}`}
-            onClick={() => setActiveTab('ai')}
+            onClick={() => navigate('/dashboard/ai')}
           >
             ◈ Ask AI
           </button>
@@ -441,14 +452,10 @@ export default function StudentDashboard() {
               Each question uses one AI credit. You have <strong>{user?.remainingCalls ?? 20}</strong> remaining.
             </p>
             <AiChatPanel onCallUsed={(usage) => {
-              if (user && usage) {
-                refreshUser({
-                  ...user,
-                  apiCallsUsed: usage.calls_used,
-                  apiCallsLimit: usage.calls_limit,
-                });
-              } else if (user) {
-                refreshUser({ ...user, apiCallsUsed: (user.apiCallsUsed || 0) + 1 });
+              if (usage) {
+                refreshUser({ apiCallsUsed: usage.calls_used, apiCallsLimit: usage.calls_limit });
+              } else {
+                refreshUser({ apiCallsUsed: (user?.apiCallsUsed || 0) + 1 });
               }
             }} />
           </Card>

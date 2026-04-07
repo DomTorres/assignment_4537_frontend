@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/common/Navbar';
-import { Card, UsageMeter, Alert, Button, Input, Textarea, Badge, Spinner } from '../components/common/UI';
+import { Card, Alert, Button, Input, Textarea, Badge, Spinner } from '../components/common/UI';
 import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { classroomService } from '../services/ClassroomService';
 import { adminService } from '../services/AdminService';
-import { Classroom } from '../models/Classroom';
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -478,7 +478,6 @@ function ClassroomManager() {
 
   const handleSelectQuestion = async (question) => {
     setSelectedQuestion(question);
-    setQuestionAnalysis(null);
     try {
       const answers = await classroomService.getAnswers(question.id);
       setQuestionAnswers(answers);
@@ -600,9 +599,16 @@ function ClassroomManager() {
  * AdminDashboard — the main view for administrator users.
  * Tabs: Overview, Manage Questions, Users & Usage.
  */
+function adminTabFromPath(pathname) {
+  const segment = pathname.split('/admin/')[1]?.split('/')[0];
+  return ['overview', 'classrooms', 'questions', 'users'].includes(segment) ? segment : 'overview';
+}
+
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(() => adminTabFromPath(location.pathname));
   const [questions, setQuestions] = useState([]);
   const [users, setUsers] = useState([]);
   const [usageSummaries, setUsageSummaries] = useState([]);
@@ -612,6 +618,11 @@ export default function AdminDashboard() {
   const [apiError, setApiError] = useState('');
 
   const questionAnalysis = analysisMap[selectedQuestion?.id] ?? null;
+
+  // Sync tab when URL changes (navbar links)
+  useEffect(() => {
+    setActiveTab(adminTabFromPath(location.pathname));
+  }, [location.pathname]);
 
   const { execute: fetchQuestions, loading: qLoading } = useApi(
     useCallback(() => classroomService.getQuestions(), [])
@@ -635,14 +646,8 @@ export default function AdminDashboard() {
     }
   }, [activeTab]);
 
-  const handlePostQuestion = async (text) => {
-    const q = await classroomService.submitQuestion(text);
-    setQuestions((prev) => [q, ...prev]);
-  };
-
   const handleSelectQuestion = async (question) => {
     setSelectedQuestion(question);
-    setQuestionAnalysis(null);
     try {
       const answers = await classroomService.getAnswers(question.id);
       setQuestionAnswers(answers);
@@ -708,7 +713,7 @@ export default function AdminDashboard() {
             <button
               key={tab}
               className={`tab-bar__tab ${activeTab === tab ? 'tab-bar__tab--active' : ''}`}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => navigate(`/admin/${tab}`)}
             >
               {tab === 'overview' && '📊 Overview'}
               {tab === 'classrooms' && '🏫 Classrooms'}
@@ -735,7 +740,7 @@ export default function AdminDashboard() {
                 <div
                   key={q.id}
                   className="overview-question-row"
-                  onClick={() => { setActiveTab('questions'); handleSelectQuestion(q); }}
+                  onClick={() => { navigate('/admin/questions'); handleSelectQuestion(q); }}
                 >
                   <span className="overview-question-row__text">{q.text}</span>
                   <Badge variant={q.isOpen ? 'open' : 'closed'}>{q.status}</Badge>

@@ -26,13 +26,14 @@ export function Navbar() {
         <nav className="navbar__nav">
           {user?.isAdmin ? (
             <>
-              <Link to="/admin" className="navbar__link">Dashboard</Link>
+              <Link to="/admin/overview" className="navbar__link">Overview</Link>
+              <Link to="/admin/classrooms" className="navbar__link">Classrooms</Link>
+              <Link to="/admin/questions" className="navbar__link">Questions</Link>
               <Link to="/admin/users" className="navbar__link">Users</Link>
-              <Link to="/admin/usage" className="navbar__link">Usage</Link>
             </>
           ) : (
             <>
-              <Link to="/dashboard" className="navbar__link">Dashboard</Link>
+              <Link to="/dashboard/classes" className="navbar__link">My Classes</Link>
               <Link to="/dashboard/questions" className="navbar__link">Questions</Link>
               <Link to="/dashboard/ai" className="navbar__link">Ask AI</Link>
             </>

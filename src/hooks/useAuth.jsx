@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/AuthService';
+import { User } from '../models/User';
 
 /**
  * AuthContext provides authentication state to the entire component tree.
@@ -42,9 +43,15 @@ export function AuthProvider({ children }) {
     setToken(null);
   }, []);
 
-  /** Update the cached user (e.g. after an API call increments usage) */
-  const refreshUser = useCallback((updatedUser) => {
-    setUser(updatedUser);
+  /**
+   * Merge partial updates into the current user and always keep a proper User instance.
+   * Call with just the changed fields: refreshUser({ apiCallsUsed: 5 })
+   */
+  const refreshUser = useCallback((updates) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      return new User({ ...prev, ...updates });
+    });
   }, []);
 
   const value = {
