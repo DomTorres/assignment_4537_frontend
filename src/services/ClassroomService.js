@@ -71,13 +71,13 @@ export class ClassroomService extends BaseApiService {
   }
 
   /**
-   * Ask the AI assistant a direct question (uses one API call).
+   * Ask the AI assistant a direct question (uses one API credit).
    * @param {string} prompt
-   * @returns {Promise<string>} - AI response text
+   * @returns {Promise<{ response: string, usage: object }>}
    */
   async askAI(prompt) {
-    const data = await this.post('/ai/ask', { prompt });
-    return data.response;
+    const data = await this.post('/user/ai/ask', { prompt });
+    return { response: data.response, usage: data._usage };
   }
 
   /** Fetch API usage summary for the current user */

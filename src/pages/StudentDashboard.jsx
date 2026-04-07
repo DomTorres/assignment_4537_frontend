@@ -109,7 +109,8 @@ function QuestionItem({ question, onAnswer }) {
 function AiChatPanel({ onCallUsed }) {
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState([]);
-  const { execute, loading, error } = useApi(
+  const [chatError, setChatError] = useState('');
+  const { execute, loading } = useApi(
     useCallback((p) => classroomService.askAI(p), [])
   );
 
@@ -118,12 +119,15 @@ function AiChatPanel({ onCallUsed }) {
     const userMsg = { role: 'user', text: prompt };
     setMessages((prev) => [...prev, userMsg]);
     setPrompt('');
+    setChatError('');
     try {
-      const response = await execute(prompt);
+      const { response, usage } = await execute(prompt);
       setMessages((prev) => [...prev, { role: 'ai', text: response }]);
-      onCallUsed?.();
-    } catch {
-      setMessages((prev) => [...prev, { role: 'error', text: error || 'AI request failed.' }]);
+      onCallUsed?.(usage);
+    } catch (err) {
+      const msg = err?.message || 'AI request failed.';
+      setChatError(msg);
+      setMessages((prev) => [...prev, { role: 'error', text: msg }]);
     }
   };
 
@@ -433,9 +437,19 @@ export default function StudentDashboard() {
         {activeTab === 'ai' && (
           <Card className="dashboard-ai-panel">
             <h2 className="panel-title">◈ AI Study Assistant</h2>
-            <p className="panel-sub">Each question uses one of your {user?.remainingCalls} remaining API calls.</p>
-            <AiChatPanel onCallUsed={() => {
-              if (user) refreshUser({ ...user, apiCallsUsed: (user.apiCallsUsed || 0) + 1 });
+            <p className="panel-sub">
+              Each question uses one AI credit. You have <strong>{user?.remainingCalls ?? 20}</strong> remaining.
+            </p>
+            <AiChatPanel onCallUsed={(usage) => {
+              if (user && usage) {
+                refreshUser({
+                  ...user,
+                  apiCallsUsed: usage.calls_used,
+                  apiCallsLimit: usage.calls_limit,
+                });
+              } else if (user) {
+                refreshUser({ ...user, apiCallsUsed: (user.apiCallsUsed || 0) + 1 });
+              }
             }} />
           </Card>
         )}

@@ -123,11 +123,16 @@ function QuestionComposer({ onPost }) {
 }
 
 /**
- * AnswerReviewPanel — shows all answers for a question and triggers AI evaluation.
+ * ClassSummaryPanel — shows aggregate AI analysis of all answers for a question.
  */
-function AnswerReviewPanel({ question, answers, analysis, onEvaluate }) {
+function ClassSummaryPanel({ question, answers, analysis, onAnalyze, onEvaluate }) {
   const [evaluating, setEvaluating] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState('');
+
+  const gradedAnswers = answers.filter((a) => a.isGraded);
+  const correctCount = gradedAnswers.filter((a) => a.correct).length;
+  const incorrectCount = gradedAnswers.filter((a) => !a.correct).length;
 
   const handleEvaluate = async () => {
     setEvaluating(true);
@@ -137,87 +142,135 @@ function AnswerReviewPanel({ question, answers, analysis, onEvaluate }) {
     finally { setEvaluating(false); }
   };
 
-  const gradedAnswers = answers.filter((a) => a.isGraded);
-  const correctCount = gradedAnswers.filter((a) => a.correct).length;
-  const incorrectCount = gradedAnswers.filter((a) => !a.correct).length;
+  const handleAnalyze = async () => {
+    setAnalyzing(true);
+    setError('');
+    try { await onAnalyze(question.id, answers); }
+    catch (err) { setError(err.message || 'Analysis failed.'); }
+    finally { setAnalyzing(false); }
+  };
 
   return (
-    <div className="answer-review">
-      <div className="answer-review__header">
-        <p className="answer-review__question">{question.text}</p>
-        {!question.isClosed && (
-          <Button
-            variant="accent"
-            loading={evaluating}
-            onClick={handleEvaluate}
-          >
-            ◈ AI Evaluate All
-          </Button>
-        )}
+    <div className="class-summary-panel">
+      <div className="class-summary-panel__header">
+        <h3 className="class-summary-panel__title">Class Summary</h3>
+        <div className="class-summary-panel__actions">
+          {!question.isClosed && (
+            <Button variant="accent" loading={evaluating} onClick={handleEvaluate}>
+              ◈ AI Evaluate All
+            </Button>
+          )}
+          {answers.length > 0 && (
+            <Button variant="primary" loading={analyzing} onClick={handleAnalyze}>
+              ◈ {analysis ? 'Refresh' : 'Generate'} Combined Analysis
+            </Button>
+          )}
+        </div>
       </div>
+
       {error && <Alert message={error} type="error" />}
 
-      {/* Class analysis panel — shown after evaluation */}
+      {/* Grade counts — shown once any grading exists */}
       {gradedAnswers.length > 0 && (
-        <div className="eval-summary">
-          <h3 className="eval-summary__title">Class Analysis</h3>
-
-          <div className="eval-summary__scores">
-            <div className="eval-summary__score eval-summary__score--pass">
-              <span className="eval-summary__count">{correctCount}</span>
-              <span className="eval-summary__label">Correct</span>
-            </div>
-            <div className="eval-summary__score eval-summary__score--fail">
-              <span className="eval-summary__count">{incorrectCount}</span>
-              <span className="eval-summary__label">Incorrect</span>
-            </div>
-            {analysis && (
-              <>
-                <div className="eval-summary__score eval-summary__score--neutral">
-                  <span className="eval-summary__count">{analysis.overallUnderstanding}%</span>
-                  <span className="eval-summary__label">Comprehension</span>
-                </div>
-                <div className="eval-summary__score eval-summary__score--warn">
-                  <span className="eval-summary__count">{analysis.confused?.count ?? 0}</span>
-                  <span className="eval-summary__label">Confused</span>
-                </div>
-              </>
-            )}
+        <div className="eval-summary__scores">
+          <div className="eval-summary__score eval-summary__score--pass">
+            <span className="eval-summary__count">{correctCount}</span>
+            <span className="eval-summary__label">Correct</span>
           </div>
+          <div className="eval-summary__score eval-summary__score--fail">
+            <span className="eval-summary__count">{incorrectCount}</span>
+            <span className="eval-summary__label">Incorrect</span>
+          </div>
+          {analysis && (
+            <>
+              <div className="eval-summary__score eval-summary__score--neutral">
+                <span className="eval-summary__count">{analysis.overallUnderstanding}%</span>
+                <span className="eval-summary__label">Comprehension</span>
+              </div>
+              <div className="eval-summary__score eval-summary__score--warn">
+                <span className="eval-summary__count">{analysis.confused?.count ?? 0}</span>
+                <span className="eval-summary__label">Confused</span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
-          {analysis?.summary && (
+      {/* AI-generated combined summary */}
+      {analysis ? (
+        <div className="class-summary-panel__body">
+          {analysis.summary && (
             <p className="eval-summary__text">{analysis.summary}</p>
           )}
 
-          {analysis?.themes?.length > 0 && (
+          {analysis.themes?.length > 0 && (
             <div className="eval-summary__section">
               <p className="eval-summary__section-title">Common Themes</p>
               <ul className="eval-summary__list">
                 {analysis.themes.map((t, i) => (
                   <li key={i} className="eval-summary__list-item">
                     <span className="eval-summary__list-label">{t.theme}</span>
-                    <span className="eval-summary__list-meta">{t.count} student{t.count !== 1 ? 's' : ''} · {t.percentage}%</span>
+                    <span className="eval-summary__list-meta">
+                      {t.count} student{t.count !== 1 ? 's' : ''} · {t.percentage}%
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
           )}
 
-          {analysis?.misconceptions?.length > 0 && (
+          {analysis.misconceptions?.length > 0 && (
             <div className="eval-summary__section">
-              <p className="eval-summary__section-title eval-summary__section-title--warn">Misconceptions</p>
+              <p className="eval-summary__section-title eval-summary__section-title--warn">
+                Misconceptions
+              </p>
               <ul className="eval-summary__list">
                 {analysis.misconceptions.map((m, i) => (
                   <li key={i} className="eval-summary__list-item">
                     <span className="eval-summary__list-label">{m.misconception}</span>
-                    <span className="eval-summary__list-meta">{m.count} student{m.count !== 1 ? 's' : ''}</span>
+                    <span className="eval-summary__list-meta">
+                      {m.count} student{m.count !== 1 ? 's' : ''}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
           )}
         </div>
+      ) : (
+        answers.length > 0 && (
+          <p className="class-summary-panel__hint">
+            Click "Generate Combined Analysis" to see an AI-generated summary of all responses.
+          </p>
+        )
       )}
+
+      {answers.length === 0 && (
+        <div className="dashboard-empty">No answers submitted yet.</div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * AnswerReviewPanel — shows all answers for a question and triggers AI evaluation.
+ */
+function AnswerReviewPanel({ question, answers, analysis, onEvaluate, onAnalyze }) {
+  return (
+    <div className="answer-review">
+      <p className="answer-review__question">{question.text}</p>
+
+      <ClassSummaryPanel
+        question={question}
+        answers={answers}
+        analysis={analysis}
+        onEvaluate={onEvaluate}
+        onAnalyze={onAnalyze}
+      />
+
+      <h4 className="answer-review__list-title">
+        Individual Responses ({answers.length})
+      </h4>
 
       {answers.length === 0 && (
         <div className="dashboard-empty">No answers submitted yet.</div>
@@ -373,9 +426,12 @@ function ClassroomManager() {
   const [questions, setQuestions] = useState([]);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [questionAnswers, setQuestionAnswers] = useState([]);
-  const [questionAnalysis, setQuestionAnalysis] = useState(null);
+  // Keyed by question ID so analysis persists when switching between questions
+  const [analysisMap, setAnalysisMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const questionAnalysis = analysisMap[selectedQuestion?.id] ?? null;
 
   useEffect(() => {
     classroomService.getMyClassrooms()
@@ -452,10 +508,17 @@ function ClassroomManager() {
     setQuestionAnswers(answers);
     try {
       const analysis = await classroomService.analyzeAnswers(updated.text, answers);
-      setQuestionAnalysis(analysis);
+      setAnalysisMap((prev) => ({ ...prev, [questionId]: analysis }));
     } catch {
       // Analysis is non-critical — silently skip if it fails
     }
+  };
+
+  const handleAnalyze = async (questionId, answers) => {
+    const question = questions.find((q) => q.id === questionId);
+    if (!question) return;
+    const analysis = await classroomService.analyzeAnswers(question.text, answers);
+    setAnalysisMap((prev) => ({ ...prev, [questionId]: analysis }));
   };
 
   return (
@@ -517,6 +580,7 @@ function ClassroomManager() {
                 answers={questionAnswers}
                 analysis={questionAnalysis}
                 onEvaluate={handleEvaluate}
+                onAnalyze={handleAnalyze}
               />
             ) : (
               <div className="dashboard-empty">
@@ -544,8 +608,10 @@ export default function AdminDashboard() {
   const [usageSummaries, setUsageSummaries] = useState([]);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [questionAnswers, setQuestionAnswers] = useState([]);
-  const [questionAnalysis, setQuestionAnalysis] = useState(null);
+  const [analysisMap, setAnalysisMap] = useState({});
   const [apiError, setApiError] = useState('');
+
+  const questionAnalysis = analysisMap[selectedQuestion?.id] ?? null;
 
   const { execute: fetchQuestions, loading: qLoading } = useApi(
     useCallback(() => classroomService.getQuestions(), [])
@@ -592,15 +658,30 @@ export default function AdminDashboard() {
     setQuestionAnswers(answers);
     try {
       const analysis = await classroomService.analyzeAnswers(updated.text, answers);
-      setQuestionAnalysis(analysis);
+      setAnalysisMap((prev) => ({ ...prev, [questionId]: analysis }));
     } catch {
       // Analysis is non-critical — silently skip if it fails
     }
   };
 
+  const handleAnalyze = async (questionId, answers) => {
+    const question = questions.find((q) => q.id === questionId);
+    if (!question) return;
+    const analysis = await classroomService.analyzeAnswers(question.text, answers);
+    setAnalysisMap((prev) => ({ ...prev, [questionId]: analysis }));
+  };
+
   const handleResetUsage = async (userId) => {
     const updated = await adminService.resetUserUsage(userId);
     setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+    // Reset usage bar immediately — don't wait for a re-fetch
+    setUsageSummaries((prev) =>
+      prev.map((s) =>
+        s.user.id === userId
+          ? { ...s, usage: { ...s.usage, used: 0, records: [] } }
+          : s
+      )
+    );
   };
 
   const totalStudents = users.filter((u) => !u.isAdmin).length;
@@ -705,6 +786,7 @@ export default function AdminDashboard() {
                   answers={questionAnswers}
                   analysis={questionAnalysis}
                   onEvaluate={handleEvaluate}
+                  onAnalyze={handleAnalyze}
                 />
               ) : (
                 <div className="dashboard-empty">
